@@ -1,0 +1,15 @@
+Volume:
+  Start: 0
+  End: 100
+  Steps: 50
+
+Frequency:
+  Start: 240
+  End: 260
+  Steps: 5
+
+Measurements:
+  Number: 3  # Number of measurements for each vol/freq combination
+  Duration: 1 # Duration in seconds of each measurement
+
+

@@ -1,0 +1,8 @@
+Board:
+  Id: PLAYBACK_FILE_BOARD
+  Master: EXPLORE_8_CHAN_BOARD
+  Mac: null
+  File: ../PlayBackRecording/20250321_200507_recording.csv
+
+VHP:
+  Serial: "/dev/ttyACM0"
