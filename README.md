@@ -2,6 +2,16 @@
 
 This script synchronizes triggering F2Heal VHP device while making EEG measurements
 
+# Requirements
+
+Python:
+
+- [Brainflow](https://brainflow.readthedocs.io/en/stable/BuildBrainFlow.html#python) package.
+
+VHP:
+
+- The [F2H-SERIAL_COMMAND](https://github.com/F2HEAL/VHP-Vibro-Glove2/tree/F2H-SERIAL_COMAND) branch
+
 # Usage
 
 A Typical usage would be:

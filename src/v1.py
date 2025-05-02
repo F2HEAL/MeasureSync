@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 
 import argparse
-import yaml
 import logging
-import serial
 import time
 from datetime import datetime
+import serial
+import yaml
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 
 
 class Config:
+    """Holds information from parsed config files"""
+
     def __init__(self, volume_start, volume_end, volume_steps,
                  frequency_start, frequency_end, frequency_steps,
                  measurements_number, measurements_duration,
                  board_id, board_master, board_mac, board_file,
+                 board_serial,
                  serial_port,
                  verbose):
         self.volume_start = volume_start
@@ -28,24 +31,27 @@ class Config:
         self.board_master = board_master
         self.board_mac = board_mac
         self.board_file = board_file
+        self.board_serial = board_serial
         self.serial_port = serial_port
         self.verbose = verbose
         self.timestamp = datetime.now().strftime("%y%m%d-%H%M")
 
     def __str__(self):
-        return (f"Volume Range: {self.volume_start} to {self.volume_end}, Steps: {self.volume_steps}\n"
-                f"Frequency Range: {self.frequency_start} to {self.frequency_end}, Steps: {self.frequency_steps}\n"
-                f"Measurements: Number = {self.measurements_number}, Duration = {self.measurements_duration}s\n"
-                f"Board: Id = {self.board_id}, Master = {self.board_master}, Mac = {self.board_mac}")
+        return (f"Volume Range: {self.volume_start} to {self.volume_end}, "
+                f"Steps: {self.volume_steps}\n"
+                f"Frequency Range: {self.frequency_start} to "
+                f"{self.frequency_end}, Steps: {self.frequency_steps}\n"
+                f"Measurements: Number = {self.measurements_number}, "
+                f"Duration = {self.measurements_duration}s\n"
+                f"Board: Id = {self.board_id}, Master = {self.board_master}, "
+                f"Mac = {self.board_mac}, Serial = {self.board_serial}")
 
-    def generate_filename_base(self):
-        return (f"{self.timestamp}_{self.board_id}_"
-                f"vol{self.volume_start}-{self.volume_end}-s{self.volume_steps}_"
-                f"freq-{self.frequency_start}-{self.frequency_end}-s{self.frequency_steps}_"
-                f"dur-{self.measurements_duration}")
+        
 
-
+    
 class SerialCommunicator:
+    """Handles serial communication with VHP device"""
+
     BAUDRATE = 115200
     TIMEOUT_SEC = 1
 
@@ -127,6 +133,7 @@ def parse_cmdline():
         board_master=device['Board']['Master'],
         board_mac=device['Board']['Mac'],
         board_file=device['Board']['File'],
+        board_serial=device['Board']['Serial'],
         serial_port=device['VHP']['Serial'],
         verbose=args.verbose
     )
@@ -152,7 +159,12 @@ def setup_brainflow_board(config):
         board_id = BoardIds[config.board_id].value
     else:
         # Setup for live streaming
-        params.mac_address = config.board_mac
+        if config.board_mac:
+            params.mac_address = config.board_mac
+
+        if config.board_serial:
+            params.serial_port = config.board_serial
+
         board_id = BoardIds[config.board_id].value
 
     board_shim = BoardShim(board_id, params)

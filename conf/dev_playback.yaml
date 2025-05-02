@@ -3,6 +3,7 @@ Board:
   Master: EXPLORE_8_CHAN_BOARD
   Mac: null
   File: ../PlayBackRecording/20250321_200507_recording.csv
+  Serial: null
 
 VHP:
   Serial: "/dev/ttyACM0"

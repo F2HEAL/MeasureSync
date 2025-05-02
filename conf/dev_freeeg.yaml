@@ -1,9 +1,9 @@
 Board:
   Id: EXPLORE_8_CHAN_BOARD
   Master: null
-  Mac: "00:13:43:A1:84:FE"
+  Mac: null
   File: null
-  Serial: null
+  Serial: "/dev/ttyACM1"
 
 VHP:
   Serial: "/dev/ttyACM0"

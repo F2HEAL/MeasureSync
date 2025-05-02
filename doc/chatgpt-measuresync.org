@@ -372,6 +372,18 @@ logger.trace("Board object created -3")
 #+end_src
 
 This way, you can use the =trace= method to log messages at the TRACE level.
+** Can you rewrite the following code so that lines are no longer than 79 chars keeping the indentation as is:
+#+begin_src python
+    def __str__(self):
+        return (f"Volume Range: {self.volume_start} to {self.volume_end}, Steps: {self.volume_steps}\n"
+                f"Frequency Range: {self.frequency_start} to {self.frequency_end}, Steps: {self.frequency_steps}\n"
+                f"Measurements: Number = {self.measurements_number}, Duration = {self.measurements_duration}s\n"
+                f"Board: Id = {self.board_id}, Master = {self.board_master}, Mac = {self.board_mac}")
+#+end_src
+
+
+#+begin_src python
+#+end_src
 * Measurement
 ** Can you write a function perform measurement that takes as arguments resultfname, volume, frequency and duration, that starts measurements using 
 
