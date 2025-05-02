@@ -46,9 +46,7 @@ class Config:
                 f"Board: Id = {self.board_id}, Master = {self.board_master}, "
                 f"Mac = {self.board_mac}, Serial = {self.board_serial}")
 
-        
 
-    
 class SerialCommunicator:
     """Handles serial communication with VHP device"""
 
@@ -74,9 +72,9 @@ class SerialCommunicator:
                 self.ser.close()
                 logging.info("Serial closed")
 
-    def send_command(self, command):
+    def _send_command(self, command):
         self.ser.write((command + '\n').encode('utf-8'))
-        logging.debug(f"Serial Sent: {command}")
+        logging.debug("Serial VHP Sent: %s", command)
 
         # Wait a little to receive Arduino reply
         time.sleep(0.05)
@@ -84,32 +82,34 @@ class SerialCommunicator:
         # Read and print all available replies
         while self.ser.in_waiting > 0:
             response = self.ser.readline().decode('utf-8', errors='ignore').strip()
-            logging.debug(f"Serial Received: {response}")
+            logging.debug("Serial VHP Received: %s", response)
 
     def set_volume(self, volume):
         volume = max(0, min(100, volume))
-        self.send_command(f'V{volume}')
+        self._send_command(f'V{volume}')
 
     def set_frequency(self, frequency):
-        self.send_command(f'F{frequency}')
+        self._send_command(f'F{frequency}')
 
     def start_stream(self):
-        self.send_command('1')
+        self._send_command('1')
 
     def stop_stream(self):
-        self.send_command('0')
+        self._send_command('0')
 
 
 def parse_yaml_file(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
+
 def parse_cmdline():
-    parser = argparse.ArgumentParser(description="Parse a YAML configuration file.")
+    parser = argparse.ArgumentParser(description="EEG/VHP sync")
     parser.add_argument('-m', '--measureconf', type=str, required=True,
                         help="Path to the YAML measurement configuration file")
     parser.add_argument('-d', '--deviceconf', type=str, required=True,
-                        help="Path to the YAML measurement device configuration file")
+                        help="Path to the YAML measurement device"
+                        "configuration file")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="verbose level, up until 5 allowed")
     args = parser.parse_args()
@@ -138,15 +138,8 @@ def parse_cmdline():
         verbose=args.verbose
     )
 
-    BoardShim.enable_dev_board_logger()
-
-    log_format = "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
-
-    logging.basicConfig(
-        format=log_format,
-        level=config.verbose*10)
-
     return config
+
 
 def setup_brainflow_board(config):
 
@@ -171,8 +164,16 @@ def setup_brainflow_board(config):
 
     return board_shim
 
+
 def do_measurement(com, board_shim, config, frequency, volume):
-    logging.info(f"Measuring {frequency}-{volume}")
+    logging.info("Measuring Freq=%i Vol=%i", frequency, volume)
+
+    fname = (f"../Recordings/{config.timestamp}_{config.board_id}_"
+             f"f{frequency}_v{volume}.csv")
+
+    streamer_params = f"file://{fname}:w"
+    board_shim.add_streamer(streamer_params)
+    board_shim.start_stream()
 
     for i in range(config.measurements_number):
         board_shim.insert_marker(i+1)
@@ -185,14 +186,24 @@ def do_measurement(com, board_shim, config, frequency, volume):
 
         time.sleep(1)
 
+    board_shim.stop_stream()
+    board_shim.delete_streamer(streamer_params)
+
+
 def main():
     config = parse_cmdline()
+
+    BoardShim.enable_dev_board_logger()
+
+    logging.basicConfig(
+        format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+        level=config.verbose*10)  # doesn't work?
     logging.info("Config loaded: %s", config)
 
     # Connect to board
     board_shim = setup_brainflow_board(config)
     try:
-        com = SerialCommunicator(config.serial_port)
+        vhpcom = SerialCommunicator(config.serial_port)
 
         board_shim.prepare_session()
 
@@ -201,22 +212,12 @@ def main():
             for vol in range(config.volume_start, config.volume_end+1,
                              config.volume_steps):
 
-                # set volume and frequency
-                com.set_volume(vol)
-                com.set_frequency(freq)
+                vhpcom.set_volume(vol)
+                vhpcom.set_frequency(freq)
 
-                fname = (f"../Recordings/{config.timestamp}_{config.board_id}_"
-                         f"f{freq}_v{vol}.csv")
-
-                streamer_params = f"file://{fname}:w"
-                board_shim.add_streamer(streamer_params)
-                board_shim.start_stream()
-
-                do_measurement(com, board_shim, config,
+                do_measurement(vhpcom, board_shim, config,
                                freq, vol)
 
-                board_shim.stop_stream()
-                board_shim.delete_streamer(streamer_params)
     except BaseException:
         logging.warning('Exception', exc_info=True)
     finally:
