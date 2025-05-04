@@ -158,7 +158,7 @@ def setup_brainflow_board(config):
         if config.board_serial:
             params.serial_port = config.board_serial
 
-        board_id = BoardIds[config.board_id].value
+        board_id = BoardIds[config.board_id]
 
     board_shim = BoardShim(board_id, params)
 
