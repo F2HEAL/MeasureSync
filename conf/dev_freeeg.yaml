@@ -1,9 +1,10 @@
 Board:
-  Id: EXPLORE_8_CHAN_BOARD
+  Id: FREEEEG32_BOARD
   Master: null
   Mac: null
   File: null
-  Serial: "/dev/ttyACM1"
+#  Serial: "/dev/ttyACM1" #LINUX
+  Serial: "COM5" #WINDOWS
 
 VHP:
   Serial: "/dev/ttyACM0"
