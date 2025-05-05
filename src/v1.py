@@ -184,7 +184,8 @@ def do_measurement(com, board_shim, config, frequency, volume):
 
         com.stop_stream()
 
-        time.sleep(1)
+#        time.sleep(1)
+        time.sleep(config.measurements_duration)
 
     board_shim.stop_stream()
     board_shim.delete_streamer(streamer_params)
