@@ -10,6 +10,6 @@ Frequency:
 
 Measurements:
   Number: 10  # Number of measurements for each vol/freq combination
-  Duration: 1 # Duration in seconds of each measurement
+  Duration: 1 # Duration in seconds of each measurement ON  and each OFF period
 
 
