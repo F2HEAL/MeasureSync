@@ -10,7 +10,7 @@ Python:
 
 VHP:
 
-- The [F2H-SERIAL_COMMAND2](https://github.com/F2HEAL/VHP-Vibro-Glove2/tree/F2H-SERIAL_COMAND2) branch
+- The [F2H-SERIAL_COMMAND_2](https://github.com/F2HEAL/VHP-Vibro-Glove2/tree/F2H-SERIAL_COMAND_2) branch
 
 # Usage
 
