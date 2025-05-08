@@ -16,6 +16,7 @@ VHP:
 
 A Typical usage would be:
 
+     python.exe '.\sweep_CH_Vol_Freq_diff_ON_OFF.py' -m .\sweep_CH_Vol_Freq_diff_ON_OFF.yaml -d .\dev_freeeg.yaml
      v1 -m ../conf/vol_sweep10_100_freq_a250.yaml  -d ../conf/dev_playback.yaml
 
 Where
