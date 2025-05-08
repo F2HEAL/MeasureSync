@@ -1,20 +1,20 @@
 Channel:
   Start: 1
-  End: 1
+  End: 2
   Steps: 1
 
 Volume:
-  Start: 10
+  Start: 25
   End: 100
-  Steps: 5
+  Steps: 25
 
 Frequency:
-  Start: 250
-  End: 250
-  Steps: 1
+  Start: 30
+  End: 40
+  Steps: 10
 
 Measurements:
-  Number: 10  # Number of measurements for each vol/freq combination
-  Duration: 1 # Duration in seconds of each measurement ON  and each OFF period
-
+  Number: 2  # Number of measurements for each vol/freq combination
+  Duration_on: 3 # Duration in seconds of each measurement ON period
+  Duration_off: 3 # Duration in seconds of each measurement OFF period
 
