@@ -16,7 +16,7 @@ class Config:
 
     def __init__(self, channel_start, channel_end, channel_steps, volume_start, volume_end, volume_steps,
                  frequency_start, frequency_end, frequency_steps,
-                 measurements_number, measurements_duration,
+                 measurements_number, measurements_duration_on, measurements_duration_off,
                  board_id, board_master, board_mac, board_file,
                  board_serial,
                  serial_port,
@@ -31,7 +31,8 @@ class Config:
         self.frequency_end = frequency_end
         self.frequency_steps = frequency_steps
         self.measurements_number = measurements_number
-        self.measurements_duration = measurements_duration
+        self.measurements_duration_on = measurements_duration_on
+        self.measurements_duration_off = measurements_duration_off
         self.board_id = board_id
         self.board_master = board_master
         self.board_mac = board_mac
@@ -47,7 +48,8 @@ class Config:
                 f"Frequency Range: {self.frequency_start} to "
                 f"{self.frequency_end}, Steps: {self.frequency_steps}\n"
                 f"Measurements: Number = {self.measurements_number}, "
-                f"Duration = {self.measurements_duration}s\n"
+                f"Duration_on = {self.measurements_duration_on}s, "
+                f"Duration_off = {self.measurements_duration_off}s\n"
                 f"Board: Id = {self.board_id}, Master = {self.board_master}, "
                 f"Mac = {self.board_mac}, Serial = {self.board_serial}")
 
@@ -89,6 +91,29 @@ class SerialCommunicator:
             response = self.ser.readline().decode('utf-8', errors='ignore').strip()
             logging.debug("Serial VHP Received: %s", response)
 
+    def set_duration(self, duration):
+        duration = max(1, min(65535, duration))
+        self._send_command(f'D{duration}')
+
+    def set_cycle_period(self, cycle_period):
+        cycle_period = max(1, min(65535, cycle_period))
+        self._send_command(f'Y{cycle_period}')
+
+    def set_pause_cycle_period(self, pause_cycle_period):
+        pause_cycle_period = max(0, min(100, pause_cycle_period))
+        self._send_command(f'P{pause_cycle_period}')
+
+    def set_paused_cycles(self, paused_cycles):
+        paused_cycles = max(0, min(100, paused_cycles))
+        self._send_command(f'Q{paused_cycles}')
+
+    def set_jitter(self, jitter):
+        jitter = max(0, min(1000, jitter))
+        self._send_command(f'J{jitter}')
+
+    def set_test_mode(self, enabled):
+        self._send_command(f'M{1 if enabled else 0}')
+
     def set_channel(self, channel):
         channel = max(0, min(8, channel))
         self._send_command(f'C{channel}')
@@ -106,6 +131,11 @@ class SerialCommunicator:
     def stop_stream(self):
         self._send_command('0')
 
+    def get_fw(self):
+        self._send_command('S')
+    
+    def get_par(self):
+        self._send_command('X')
 
 def parse_yaml_file(file_path):
     with open(file_path, 'r') as file:
@@ -130,6 +160,9 @@ def parse_cmdline():
 
     # Create a Config object
     config = Config(
+        channel_start=measurement['Channel']['Start'],
+        channel_end=measurement['Channel']['End'],
+        channel_steps=measurement['Channel']['Steps'],  
         volume_start=measurement['Volume']['Start'],
         volume_end=measurement['Volume']['End'],
         volume_steps=measurement['Volume']['Steps'],
@@ -175,10 +208,11 @@ def setup_brainflow_board(config):
     return board_shim
 
 
-def do_measurement(com, board_shim, config, chan, frequency, volume):
-    logging.info("Measuring Chan=%i Freq=%i Vol=%i", chan, frequency, volume)
+def do_measurement(com, board_shim, config, channel, frequency, volume):
+    logging.info(com.get_par())
+    logging.info("Measuring Chan=%i Freq=%i Vol=%i", channel, frequency, volume)
 
-    fname = (f"../Recordings/{config.timestamp}_{config.board_id}_"
+    fname = (f"./Recordings/{config.timestamp}_{config.board_id}_"
              f"c{channel}_f{frequency}_v{volume}.csv")
 
     streamer_params = f"file://{fname}:w"
@@ -219,14 +253,21 @@ def main():
 
         board_shim.prepare_session()
 
-        for chan in range(config.channel_start_start, config.channel_end + 1,
+        vhpcom.set_duration(8000)
+        vhpcom.set_cycle_period(64000)
+        vhpcom.set_pause_cycle_period(1)
+        vhpcom.set_paused_cycles(0)
+        vhpcom.set_jitter(0)
+        vhpcom.set_test_mode(1)
+
+        for chan in range(config.channel_start, config.channel_end + 1,
                         config.channel_steps):
             for freq in range(config.frequency_start, config.frequency_end + 1,
                             config.frequency_steps):
                 for vol in range(config.volume_start, config.volume_end+1,
                                 config.volume_steps):
 
-                    vhpcom.set_volume(chan)
+                    vhpcom.set_channel(chan)
                     vhpcom.set_volume(vol)
                     vhpcom.set_frequency(freq)
 
