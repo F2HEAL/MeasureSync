@@ -17,7 +17,7 @@ class Config:
     def __init__(self, measurement, device, args):
         self.channel_start = measurement['Channel']['Start']
         self.channel_end = measurement['Channel']['End']
-        self.channel_steps = measurement['Channel']['Steps']  
+        self.channel_steps = measurement['Channel']['Steps']
         self.volume_start = measurement['Volume']['Start']
         self.volume_end = measurement['Volume']['End']
         self.volume_steps = measurement['Volume']['Steps']
@@ -127,7 +127,7 @@ class SerialCommunicator:
 
     def get_fw(self):
         self._send_command('S')
-    
+
     def get_par(self):
         self._send_command('X')
 
@@ -154,7 +154,9 @@ def parse_cmdline():
 
     # Create a Config object
     config = Config(measurement, device, args)
-    
+
+    write_metadata(args, config)
+
     return config
 
 
@@ -208,6 +210,23 @@ def do_measurement(com, board_shim, config, channel, frequency, volume):
     board_shim.stop_stream()
     board_shim.delete_streamer(streamer_params)
 
+def write_metadata(args, config):
+    fname = (f"./Recordings/{config.timestamp}_metadata.txt")
+    with open(fname, "w") as f:
+        readable_timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        f.write(f"Recording on: {readable_timestamp}\n")
+        f.write("\n")
+        f.write("Subject name: \n")
+        f.write("Recording location: \n")
+        f.write("finger tested: \n\n")
+
+        f.write("*** Contents of Measure Configuration ***\n")
+        fm = open(args.measureconf, "r")
+        f.write(fm.read())
+
+        f.write("*** Contents of Device Configuration:***\n")
+        fd = open(args.deviceconf, "r")
+        f.write(fd.read())
 
 def main():
     config = parse_cmdline()
