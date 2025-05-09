@@ -243,8 +243,6 @@ def main():
     try:
         vhpcom = SerialCommunicator(config.serial_port)
 
-        board_shim.prepare_session()
-
         vhpcom.set_duration(8000)
         vhpcom.set_cycle_period(64000)
         vhpcom.set_pause_cycle_period(1)
@@ -253,19 +251,22 @@ def main():
         vhpcom.set_test_mode(1)
 
         for chan in range(config.channel_start, config.channel_end + 1,
-                        config.channel_steps):
+                          config.channel_steps):
             for freq in range(config.frequency_start, config.frequency_end + 1,
-                            config.frequency_steps):
+                              config.frequency_steps):
                 for vol in range(config.volume_start, config.volume_end+1,
-                                config.volume_steps):
+                                 config.volume_steps):
+
+                    board_shim.prepare_session()
 
                     vhpcom.set_channel(chan)
                     vhpcom.set_volume(vol)
                     vhpcom.set_frequency(freq)
 
                     do_measurement(vhpcom, board_shim, config,
-                                chan, freq, vol)
+                                   chan, freq, vol)
 
+                    board_shim.release_session()
     except BaseException:
         logging.warning('Exception', exc_info=True)
     finally:
