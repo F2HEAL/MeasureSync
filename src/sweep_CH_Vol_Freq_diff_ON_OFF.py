@@ -14,32 +14,26 @@ from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 class Config:
     """Holds information from parsed config files"""
 
-    def __init__(self, channel_start, channel_end, channel_steps, volume_start, volume_end, volume_steps,
-                 frequency_start, frequency_end, frequency_steps,
-                 measurements_number, measurements_duration_on, measurements_duration_off,
-                 board_id, board_master, board_mac, board_file,
-                 board_serial,
-                 serial_port,
-                 verbose):
-        self.channel_start = channel_start
-        self.channel_end = channel_end
-        self.channel_steps = channel_steps
-        self.volume_start = volume_start
-        self.volume_end = volume_end
-        self.volume_steps = volume_steps
-        self.frequency_start = frequency_start
-        self.frequency_end = frequency_end
-        self.frequency_steps = frequency_steps
-        self.measurements_number = measurements_number
-        self.measurements_duration_on = measurements_duration_on
-        self.measurements_duration_off = measurements_duration_off
-        self.board_id = board_id
-        self.board_master = board_master
-        self.board_mac = board_mac
-        self.board_file = board_file
-        self.board_serial = board_serial
-        self.serial_port = serial_port
-        self.verbose = verbose
+    def __init__(self, measurement, device, args):
+        self.channel_start = measurement['Channel']['Start']
+        self.channel_end = measurement['Channel']['End']
+        self.channel_steps = measurement['Channel']['Steps']  
+        self.volume_start = measurement['Volume']['Start']
+        self.volume_end = measurement['Volume']['End']
+        self.volume_steps = measurement['Volume']['Steps']
+        self.frequency_start = measurement['Frequency']['Start']
+        self.frequency_end = measurement['Frequency']['End']
+        self.frequency_steps = measurement['Frequency']['Steps']
+        self.measurements_number = measurement['Measurements']['Number']
+        self.measurements_duration_on = measurement['Measurements']['Duration_on']
+        self.measurements_duration_off = measurement['Measurements']['Duration_off']
+        self.board_id = device['Board']['Id']
+        self.board_master = device['Board']['Master']
+        self.board_mac = device['Board']['Mac']
+        self.board_file = device['Board']['File']
+        self.board_serial = device['Board']['Serial']
+        self.serial_port = device['VHP']['Serial']
+        self.verbose = args.verbose
         self.timestamp = datetime.now().strftime("%y%m%d-%H%M")
 
     def __str__(self):
@@ -159,28 +153,8 @@ def parse_cmdline():
     device = parse_yaml_file(args.deviceconf)
 
     # Create a Config object
-    config = Config(
-        channel_start=measurement['Channel']['Start'],
-        channel_end=measurement['Channel']['End'],
-        channel_steps=measurement['Channel']['Steps'],  
-        volume_start=measurement['Volume']['Start'],
-        volume_end=measurement['Volume']['End'],
-        volume_steps=measurement['Volume']['Steps'],
-        frequency_start=measurement['Frequency']['Start'],
-        frequency_end=measurement['Frequency']['End'],
-        frequency_steps=measurement['Frequency']['Steps'],
-        measurements_number=measurement['Measurements']['Number'],
-        measurements_duration_on=measurement['Measurements']['Duration_on'],
-        measurements_duration_off=measurement['Measurements']['Duration_off'],
-        board_id=device['Board']['Id'],
-        board_master=device['Board']['Master'],
-        board_mac=device['Board']['Mac'],
-        board_file=device['Board']['File'],
-        board_serial=device['Board']['Serial'],
-        serial_port=device['VHP']['Serial'],
-        verbose=args.verbose
-    )
-
+    config = Config(measurement, device, args)
+    
     return config
 
 
@@ -209,7 +183,6 @@ def setup_brainflow_board(config):
 
 
 def do_measurement(com, board_shim, config, channel, frequency, volume):
-    logging.info(com.get_par())
     logging.info("Measuring Chan=%i Freq=%i Vol=%i", channel, frequency, volume)
 
     fname = (f"./Recordings/{config.timestamp}_{config.board_id}_"
