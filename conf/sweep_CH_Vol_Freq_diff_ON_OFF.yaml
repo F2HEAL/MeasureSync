@@ -17,4 +17,5 @@ Measurements:
   Number: 2  # Number of measurements for each vol/freq combination
   Duration_on: 3 # Duration in seconds of each measurement ON period
   Duration_off: 3 # Duration in seconds of each measurement OFF period
+  Pre-start_EEG_measurement: 1 # Time in seconds that the EEG mearement starts prior to the first start (not yet implemented)
 
