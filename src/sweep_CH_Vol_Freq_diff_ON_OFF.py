@@ -195,7 +195,6 @@ def do_measurement(com, board_shim, config, channel, frequency, volume):
     board_shim.start_stream()
 
     for i in range(config.measurements_number):
-#        board_shim.insert_marker(i+1) # 'running up' marker
         board_shim.insert_marker(1) # fixed stimulus_ON marker
         com.start_stream()
 
@@ -204,7 +203,6 @@ def do_measurement(com, board_shim, config, channel, frequency, volume):
         board_shim.insert_marker(11) # fixed stimulus_OFF marker
         com.stop_stream()
 
-#        time.sleep(1)
         time.sleep(config.measurements_duration_off)
 
     board_shim.stop_stream()
@@ -250,6 +248,8 @@ def main():
         vhpcom.set_jitter(0)
         vhpcom.set_test_mode(1)
 
+        board_shim.prepare_session()
+
         for chan in range(config.channel_start, config.channel_end + 1,
                           config.channel_steps):
             for freq in range(config.frequency_start, config.frequency_end + 1,
@@ -257,7 +257,7 @@ def main():
                 for vol in range(config.volume_start, config.volume_end+1,
                                  config.volume_steps):
 
-                    board_shim.prepare_session()
+
 
                     vhpcom.set_channel(chan)
                     vhpcom.set_volume(vol)
@@ -266,7 +266,6 @@ def main():
                     do_measurement(vhpcom, board_shim, config,
                                    chan, freq, vol)
 
-                    board_shim.release_session()
     except BaseException:
         logging.warning('Exception', exc_info=True)
     finally:
