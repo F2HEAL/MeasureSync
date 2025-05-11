@@ -27,6 +27,7 @@ class Config:
         self.measurements_number = measurement['Measurements']['Number']
         self.measurements_duration_on = measurement['Measurements']['Duration_on']
         self.measurements_duration_off = measurement['Measurements']['Duration_off']
+        self.measurements_prestart = measurement['Measurements']['Pre-start_EEG_measurement']
         self.board_id = device['Board']['Id']
         self.board_master = device['Board']['Master']
         self.board_mac = device['Board']['Mac']
@@ -193,6 +194,8 @@ def do_measurement(com, board_shim, config, channel, frequency, volume):
     streamer_params = f"file://{fname}:w"
     board_shim.add_streamer(streamer_params)
     board_shim.start_stream()
+
+    time.sleep(config.measurements_prestart)
 
     for i in range(config.measurements_number):
         board_shim.insert_marker(1) # fixed stimulus_ON marker
