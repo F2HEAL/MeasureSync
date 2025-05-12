@@ -220,7 +220,8 @@ def write_metadata(args, config):
         f.write("Subject name: \n")
         f.write("Recording location: \n")
         f.write("finger tested: \n\n")
-
+        f.write("S/N VBS device: \n\n")
+        f.write("Modelname VBS device: \n\n")
         f.write("*** Contents of Measure Configuration ***\n")
         fm = open(args.measureconf, "r")
         f.write(fm.read())
