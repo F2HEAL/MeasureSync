@@ -184,32 +184,60 @@ def setup_brainflow_board(config):
 
     return board_shim
 
+import time
+import statistics
+import logging
 
 def do_measurement(com, board_shim, config, channel, frequency, volume):
     logging.info("Measuring Chan=%i Freq=%i Vol=%i", channel, frequency, volume)
+
+    import os
+    os.makedirs("./Recordings", exist_ok=True)
 
     fname = (f"./Recordings/{config.timestamp}_{config.board_id}_"
              f"c{channel}_f{frequency}_v{volume}.csv")
 
     streamer_params = f"file://{fname}:w"
     board_shim.add_streamer(streamer_params)
+
+    timing_stats = {
+        "start_stream": [],
+        "stim_on": [],
+        "stim_off": [],
+        "stop_stream": [],
+    }
+
+    t0 = time.perf_counter()
     board_shim.start_stream()
+    timing_stats["start_stream"].append(time.perf_counter() - t0)
 
     time.sleep(config.measurements_prestart)
 
     for i in range(config.measurements_number):
-        board_shim.insert_marker(1) # fixed stimulus_ON marker
+        t1 = time.perf_counter()
+        board_shim.insert_marker(1)  # Stimulus ON marker
         com.start_stream()
-
         time.sleep(config.measurements_duration_on)
+        timing_stats["stim_on"].append(time.perf_counter() - t1)
 
-        board_shim.insert_marker(11) # fixed stimulus_OFF marker
+        t2 = time.perf_counter()
+        board_shim.insert_marker(11)  # Stimulus OFF marker
         com.stop_stream()
-
         time.sleep(config.measurements_duration_off)
+        timing_stats["stim_off"].append(time.perf_counter() - t2)
 
+    t3 = time.perf_counter()
     board_shim.stop_stream()
+    timing_stats["stop_stream"].append(time.perf_counter() - t3)
+
     board_shim.delete_streamer(streamer_params)
+
+    # === Print timing stats ===
+    logging.info("--- Timing Statistics ---")
+    for key, values in timing_stats.items():
+        avg = statistics.mean(values)
+        stdev = statistics.stdev(values) if len(values) > 1 else 0
+        logging.info(f"{key:>12}: Avg = {avg:.4f}s, StdDev = {stdev:.4f}s, n = {len(values)}")
 
 def write_metadata(args, config):
     fname = (f"./Recordings/{config.timestamp}_metadata.txt")
