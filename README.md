@@ -16,7 +16,8 @@ VHP:
 
 A Typical usage would be:
 
-     python.exe '.\sweep_CH_Vol_Freq_diff_ON_OFF.py' -m .\sweep_CH_Vol_Freq_diff_ON_OFF.yaml -d .\dev_freeeg.yaml
+      python '.\sweep_CH_Vol_Freq_diff_ON_OFF.py' -m '.\sweep_CH_Vol_Freq_diff_ON_OFF.yaml' -d .\dev_freeeg.yaml -v
+
      v1 -m ../conf/vol_sweep10_100_freq_a250.yaml  -d ../conf/dev_playback.yaml
 
 Where
@@ -57,6 +58,7 @@ Board:
   Master: null
   Mac: "00:13:43:A1:84:FE"
   File: null
+  Keep_ble_alive: false
 
 VHP:
   Serial: "/dev/ttyACM0"
@@ -69,3 +71,17 @@ For the above configuration to work, the device running this script would need t
 
 Other examples are provided in the *conf* folder.
 
+---
+Board:
+  Id: FREEEEG32_BOARD
+  Master: null
+  Mac: null
+  File: null
+#  Serial: "/dev/ttyACM1"
+  Serial: "COM5"
+  Keep_ble_alive: false
+
+VHP:
+#  Serial: "/dev/ttyACM0"
+  Serial: "COM8"
+---
