@@ -33,6 +33,7 @@ class Config:
         self.board_mac = device['Board']['Mac']
         self.board_file = device['Board']['File']
         self.board_serial = device['Board']['Serial']
+        self.keep_ble_alive = device['Board']['Keep_ble_alive']
         self.serial_port = device['VHP']['Serial']
         self.verbose = args.verbose
         self.timestamp = datetime.now().strftime("%y%m%d-%H%M")
@@ -153,12 +154,9 @@ def parse_cmdline():
 
     device = parse_yaml_file(args.deviceconf)
 
-    # Create a Config object
     config = Config(measurement, device, args)
 
-    write_metadata(args, config)
-
-    return config
+    return args, config
 
 
 def setup_brainflow_board(config):
@@ -184,62 +182,36 @@ def setup_brainflow_board(config):
 
     return board_shim
 
-import time
-import statistics
-import logging
 
 def do_measurement(com, board_shim, config, channel, frequency, volume):
     logging.info("Measuring Chan=%i Freq=%i Vol=%i", channel, frequency, volume)
-
-    import os
-    os.makedirs("./Recordings", exist_ok=True)
 
     fname = (f"./Recordings/{config.timestamp}_{config.board_id}_"
              f"c{channel}_f{frequency}_v{volume}.csv")
 
     streamer_params = f"file://{fname}:w"
-    board_shim.add_streamer(streamer_params)
+    board_shim.add_streamer(streamer_params) #start writing to file
 
-    timing_stats = {
-        "start_stream": [],
-        "stim_on": [],
-        "stim_off": [],
-        "stop_stream": [],
-    }
+    time.sleep(0.002)
 
-    t0 = time.perf_counter()
-    board_shim.start_stream()
-    timing_stats["start_stream"].append(time.perf_counter() - t0)
+    board_shim.insert_marker(333) # insert "creating baseline until 1st stimulus_ON, with VHP powered ON" marker
 
     time.sleep(config.measurements_prestart)
 
     for i in range(config.measurements_number):
-        t1 = time.perf_counter()
-        board_shim.insert_marker(1)  # Stimulus ON marker
+        board_shim.insert_marker(1) # insert stimulus_ON marker
         com.start_stream()
+
         time.sleep(config.measurements_duration_on)
-        timing_stats["stim_on"].append(time.perf_counter() - t1)
 
-        t2 = time.perf_counter()
-        board_shim.insert_marker(11)  # Stimulus OFF marker
+        board_shim.insert_marker(11) # insert stimulus_OFF marker
         com.stop_stream()
+
         time.sleep(config.measurements_duration_off)
-        timing_stats["stim_off"].append(time.perf_counter() - t2)
 
-    t3 = time.perf_counter()
-    board_shim.stop_stream()
-    timing_stats["stop_stream"].append(time.perf_counter() - t3)
+    board_shim.delete_streamer(streamer_params) #stop writing to file
 
-    board_shim.delete_streamer(streamer_params)
-
-    # === Print timing stats ===
-    logging.info("--- Timing Statistics ---")
-    for key, values in timing_stats.items():
-        avg = statistics.mean(values)
-        stdev = statistics.stdev(values) if len(values) > 1 else 0
-        logging.info(f"{key:>12}: Avg = {avg:.4f}s, StdDev = {stdev:.4f}s, n = {len(values)}")
-
-def write_metadata(args, config):
+def write_metadata(args, config, fname1):
     fname = (f"./Recordings/{config.timestamp}_metadata.txt")
     with open(fname, "w") as f:
         readable_timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -248,8 +220,13 @@ def write_metadata(args, config):
         f.write("Subject name: \n")
         f.write("Recording location: \n")
         f.write("finger tested: \n\n")
-        f.write("S/N VBS device: \n\n")
-        f.write("Modelname VBS device: \n\n")
+        f.write("S/N VBS device: \n")
+        f.write("BLE MAC VBS device:  C6:3F:B3:3E:8A:72 \n")
+
+        f.write("Modelname VBS device: F2Heal VHP vSERCOM_2_0_0_BETA \n")
+
+        f.write("\n")
+
         f.write("*** Contents of Measure Configuration ***\n")
         fm = open(args.measureconf, "r")
         f.write(fm.read())
@@ -257,9 +234,31 @@ def write_metadata(args, config):
         f.write("*** Contents of Device Configuration:***\n")
         fd = open(args.deviceconf, "r")
         f.write(fd.read())
+        f.write("\n")
+        f.write(f"EEG measurements baseline with VHP powered OFF {fname1} \n")
+                 
+
+def is_vhp_connected(port, baudrate=115200, timeout=1):
+    try:
+        with serial.Serial(port, baudrate=baudrate, timeout=timeout) as ser:
+            time.sleep(1)  # wait for possible board reset
+            return True
+    except (serial.SerialException, OSError):
+        return False
+    
+# Function to keep BLE link alive
+def keep_ble_alive(board_shim, interval=1):
+    while True:
+        try:
+            board_shim.get_board_data()
+            time.sleep(interval)
+        except Exception as e:
+            logging.warning(f"BLE keepalive thread error: {e}")
+            break
 
 def main():
-    config = parse_cmdline()
+    fname1 = "no power OFF VHP CYCLE"
+    args, config = parse_cmdline()
 
     BoardShim.enable_dev_board_logger()
 
@@ -270,7 +269,37 @@ def main():
 
     # Connect to board
     board_shim = setup_brainflow_board(config)
+    # Prepare session before streaming
+    board_shim.prepare_session()
+    board_shim.start_stream()    # start eeg stream  
+
+    if config.keep_ble_alive:
+        logging.info("Starting BLE keep-alive thread...")
+        from threading import Thread
+        Thread(target=keep_ble_alive, args=(board_shim,), daemon=True).start()
+
     try:
+        if not is_vhp_connected(config.serial_port):
+
+            # Create unique file for EEG measurements baseline with VHP powered OFF
+            fname1 = f"./Recordings/{config.timestamp}_{config.board_id}_baseline_with_VHP_powered_OFF_on_persons_head_YES_NO.csv"
+            streamer_params = f"file://{fname1}:w"
+
+            board_shim.add_streamer(streamer_params) #start writing to file
+
+            time.sleep(0.003)
+            board_shim.insert_marker(3) # insert VHP_OFF marker
+
+            while not is_vhp_connected(config.serial_port):
+                print("While waiting for VHP board, EEG _baseline_with_VHP_powered_OFF_on_persons_head_YES_NO.csv is being recorded...")
+                print("Switch VHP board ON after few seconds.")
+                time.sleep(2)
+
+            print("VHP board is powered ON / connected.")
+            board_shim.insert_marker(33) # insert VHP_ON marker
+            time.sleep(config.measurements_prestart)
+            board_shim.delete_streamer(streamer_params) # stop writing to file
+
         vhpcom = SerialCommunicator(config.serial_port)
 
         vhpcom.set_duration(8000)
@@ -279,9 +308,7 @@ def main():
         vhpcom.set_paused_cycles(0)
         vhpcom.set_jitter(0)
         vhpcom.set_test_mode(1)
-
-        board_shim.prepare_session()
-
+   
         for chan in range(config.channel_start, config.channel_end + 1,
                           config.channel_steps):
             for freq in range(config.frequency_start, config.frequency_end + 1,
@@ -298,8 +325,18 @@ def main():
                     do_measurement(vhpcom, board_shim, config,
                                    chan, freq, vol)
 
-    except BaseException:
+        board_shim.stop_stream()
+        board_shim.release_session()
+        print("Stream stopped and session released.")
+        
+        write_metadata(args, config, fname1)
+
+    except BaseException as e:
         logging.warning('Exception', exc_info=True)
+        print(f"Error: {e}")
+        if board_shim.is_prepared():
+            board_shim.stop_stream()
+            board_shim.release_session()
     finally:
         if board_shim.is_prepared():
             logging.info('Releasing session')
