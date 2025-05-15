@@ -5,6 +5,7 @@ Board:
   File: null
 #  Serial: "/dev/ttyACM1" #LINUX
   Serial: "COM5" #WINDOWS
+  Keep_ble_alive: false
 
 VHP:
   Serial: "/dev/ttyACM0"
