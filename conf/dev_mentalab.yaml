@@ -4,6 +4,7 @@ Board:
   Mac: "00:13:43:A1:84:FE"
   File: null
   Serial: null
+  Keep_ble_alive: false
 
 VHP:
 #  Serial: "/dev/ttyACM0"
