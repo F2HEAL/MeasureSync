@@ -59,7 +59,7 @@ bash
 | :---: | :---: | ----- |
 | **1** | **3** | Start of EEG baseline part I if/with VBS powered OFF |
 | **1** | **33** | Start of EEG baseline part II after VBS has been powered ON (end of baseline part I) |
-| **2** | **333** | Start of EEG baseline part II bis pre-stimulation EEG with VBS ON (before first stim event) |
+| **2** | **333** | Start of EEG baseline part II bis pre-stimulation EEG with VBS powered ON (before first stim event) |
 | **2** | **1** | VBS stimulation ON |
 | **2** | **11** | VBS stimulation OFF |
 
