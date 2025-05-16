@@ -8,5 +8,5 @@ Board:
   Keep_ble_alive: false
 
 VHP:
-  Serial: "/dev/ttyACM0"
-  
+#  Serial: "/dev/ttyACM0"
+  Serial: "COM8" #WINDOWS
