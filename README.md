@@ -2,7 +2,7 @@
 
 This script synchronizes triggering F2Heal VHP device while making EEG measurements
 
-# Requirements
+## Requirements
 
 Python:
 
@@ -12,7 +12,7 @@ VHP:
 
 - The [F2H-SERIAL_COMMAND_2](https://github.com/F2HEAL/VHP-Vibro-Glove2/tree/F2H-SERIAL_COMAND_2) branch
 
-# Usage
+## Usage
 
 A Typical usage would be:
 
@@ -26,7 +26,7 @@ Where
 
 After completion, the results can be found in the *Recordings* folder
 
-## Measurement configuration
+### Measurement configuration
 
 A typical measurement configuration would be:
 ```
@@ -49,7 +49,7 @@ The above configuration file will measure every volume between 10 and 100 increa
 
 Other examples are provided in the *conf* folder.
 
-## Device configuration
+### Device configuration
 
 A typical device configuration file would be:
 ```
@@ -71,7 +71,7 @@ For the above configuration to work, the device running this script would need t
 
 Other examples are provided in the *conf* folder.
 
----
+```
 Board:
   Id: FREEEEG32_BOARD
   Master: null
@@ -84,4 +84,43 @@ Board:
 VHP:
 #  Serial: "/dev/ttyACM0"
   Serial: "COM8"
----
+
+```
+
+# Measure Report
+
+**measure_report.py** can be used to analyse the results of v1.py. 
+
+The two mandatory arguments are the *file_base* and *output_dir*. For a given *file_base* all CSV files starting with this string will be analysed. The results will be written to *output_dir*.
+
+Typical usage:
+
+``` 
+$ python measure_report.py -r -m -v INFO ../May_16th_ML_T/250516-1954_ /tmp/out-mentalab/
+[2025-05-18 14:57:41] INFO: Starting program.
+[2025-05-18 14:57:41] INFO: Opening ../May_16th_ML_T/250516-1954_EXPLORE_8_CHAN_BOARD_baseline_with_VHP_powered_OFF_on_persons_head_YES_NO.csv
+QSocketNotifier: Can only be used with threads started with QThread
+Channels marked as bad:
+...
+```
+
+Check the command line options:
+
+```
+usage: measure_report.py [-h] [-v {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-m] [-r] file_base output_dir
+
+EEG Brainflow processing script.
+
+positional arguments:
+  file_base             Base file name (input file, without extension).
+  output_dir            Directory where output will be written.
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbosity {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Logging verbosity level (default: INFO).
+  -m, --mentalab        Enable Mentalab, default FreeEEG32
+  -r, --resample        Resample Mentalab based on timestamp
+
+```
+
